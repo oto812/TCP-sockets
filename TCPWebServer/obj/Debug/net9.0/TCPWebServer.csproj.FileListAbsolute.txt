@@ -1,0 +1,4 @@
+D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\TCPWebServer.GeneratedMSBuildEditorConfig.editorconfig
+D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\TCPWebServer.AssemblyInfoInputs.cache
+D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\TCPWebServer.AssemblyInfo.cs
+D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\TCPWebServer.csproj.CoreCompileInputs.cache
