@@ -124,44 +124,147 @@ namespace TCPWebServer
         private async Task HandleClientAsync(TcpClient client)
         {
             NetworkStream stream = null;
-            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Client connected: {client.Client.RemoteEndPoint}");
+            
 
             try
             {
                 stream = client.GetStream();
 
-                
                 var request = await ReadHttpRequestAsync(stream);
 
                 if (string.IsNullOrEmpty(request))
                 {
-                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Empty request from {client.Client.RemoteEndPoint}. Closing connection.");
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Empty request from client. Closing connection.");
                     return;
                 }
 
-                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Request received from {client.Client.RemoteEndPoint}:");
-                Console.WriteLine(request.Split('\n')[0]); 
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Request received:");
+                Console.WriteLine(request.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)[0]); 
 
-                // TODO: Process the request and send a response
+                
+                var response = ProcessHttpRequest(request);
+
+                // TODO: Send response back to client
+                
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Prepared response: {response.StatusCode} {response.StatusText}");
             }
-            catch (IOException ex) 
+            catch (IOException ex)
             {
-                Console.WriteLine($"IO Error handling client {client.Client.RemoteEndPoint}: {ex.Message}");
+                Console.WriteLine($"IO Error handling client: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error handling client {client.Client.RemoteEndPoint}: {ex.Message}");
+                Console.WriteLine($"Error handling client: {ex.Message}");
             }
             finally
             {
-                
                 stream?.Close();
                 client?.Close();
-                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Client disconnected: {client.Client.RemoteEndPoint}");
+                
+            }
+        }
+
+       
+
+        private HttpResponse ProcessHttpRequest(string request)
+        {
+            try
+            {
+                var lines = request.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                if (lines.Length == 0)
+                    return CreateErrorResponse(400, "Bad Request");
+
+                var requestLine = lines[0].Trim();
+                var parts = requestLine.Split(' ');
+
+                if (parts.Length < 3) 
+                    return CreateErrorResponse(400, "Bad Request: Malformed request line");
+
+                var method = parts[0].ToUpper();
+                var url = Uri.UnescapeDataString(parts[1]); 
+
+                
+                if (method != "GET")
+                {
+                    return CreateErrorResponse(405, "Method Not Allowed");
+                }
+
+                
+                var fileName = url == "/" ? "/index.html" : url;
+                fileName = fileName.TrimStart('/');
+
+                
+                if (fileName.Contains("..") || Path.IsPathRooted(fileName) || fileName.Contains(Path.DirectorySeparatorChar) || fileName.Contains(Path.AltDirectorySeparatorChar))
+                {
+                    
+                    string fullRequestedPath = Path.GetFullPath(Path.Combine(_webRoot, fileName));
+                    if (!fullRequestedPath.StartsWith(_webRoot, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return CreateErrorResponse(403, "Forbidden: Path traversal attempt");
+                    }
+                }
+
+
+                
+                var extension = Path.GetExtension(fileName).ToLowerInvariant();
+                if (string.IsNullOrEmpty(extension) || !_mimeTypes.ContainsKey(extension))
+                {
+                    Console.WriteLine($"Forbidden: Unsupported extension '{extension}' for file '{fileName}'");
+                    return CreateErrorResponse(403, "Forbidden: File type not supported");
+                }
+
+                
+                var filePath = Path.Combine(_webRoot, fileName);
+
+                
+                if (!File.Exists(filePath))
+                {
+                    Console.WriteLine($"Not Found: File '{filePath}'");
+                    return CreateErrorResponse(404, "Not Found");
+                }
+
+                
+                var content = File.ReadAllText(filePath); 
+                var contentType = _mimeTypes[extension];
+
+                return new HttpResponse
+                {
+                    StatusCode = 200,
+                    StatusText = "OK",
+                    ContentType = contentType,
+                    Content = content
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing request: {ex.Message}");
+                return CreateErrorResponse(500, "Internal Server Error");
             }
         }
 
         
+        private HttpResponse CreateErrorResponse(int statusCode, string statusText)
+        {
+            var htmlContent = $@"<!DOCTYPE html>
+<html>
+  <head><title>{statusCode} {statusText}</title></head>
+  <body>
+    <h1>Error {statusCode}: {statusText}</h1>
+    <hr>
+    <address>MyTCPWebServer/0.1 (Conceptual)</address>
+  </body>
+</html>";
+
+            return new HttpResponse
+            {
+                StatusCode = statusCode,
+                StatusText = statusText,
+                ContentType = "text/html; charset=utf-8", 
+                Content = htmlContent
+            };
+        }
+
+
         private async Task<string> ReadHttpRequestAsync(NetworkStream stream)
         {
             
