@@ -144,8 +144,8 @@ namespace TCPWebServer
                 
                 var response = ProcessHttpRequest(request);
 
-                // TODO: Send response back to client
-                
+                await SendHttpResponseAsync(stream, response);
+
                 Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Prepared response: {response.StatusCode} {response.StatusText}");
             }
             catch (IOException ex)
@@ -164,7 +164,48 @@ namespace TCPWebServer
             }
         }
 
-       
+        private async Task SendHttpResponseAsync(NetworkStream stream, HttpResponse response)
+        {
+            try
+            {
+
+                var contentBytes = Encoding.UTF8.GetBytes(response.Content);
+
+                var responseBuilder = new StringBuilder();
+
+                responseBuilder.AppendLine($"HTTP/1.1 {response.StatusCode} {response.StatusText}");
+                responseBuilder.AppendLine($"Server: MyTCPWebServer/0.1"); 
+                responseBuilder.AppendLine($"Date: {DateTime.UtcNow:R}"); 
+                responseBuilder.AppendLine($"Content-Type: {response.ContentType}");
+                responseBuilder.AppendLine($"Content-Length: {contentBytes.Length}");
+                responseBuilder.AppendLine("Connection: close"); 
+                responseBuilder.AppendLine(); 
+
+                var headerBytes = Encoding.UTF8.GetBytes(responseBuilder.ToString());
+
+                
+                await stream.WriteAsync(headerBytes, 0, headerBytes.Length);
+
+                
+                if (contentBytes.Length > 0)
+                {
+                    await stream.WriteAsync(contentBytes, 0, contentBytes.Length);
+                }
+
+                await stream.FlushAsync(); 
+            }
+            catch (IOException ex)
+            {
+                
+                Console.WriteLine($"IOException sending response: {ex.Message}. Client may have disconnected.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending response: {ex.Message}");
+            }
+        }
+
+
 
         private HttpResponse ProcessHttpRequest(string request)
         {
@@ -351,7 +392,7 @@ a:hover {
     text-decoration: underline;
 }";
 
-                // Create script.js
+                
                 var scriptJs = @"console.log('Web server is running!');
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -366,7 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });";
 
-                // Write files
+
                 File.WriteAllText(Path.Combine(_webRoot, "index.html"), indexHtml);
                 File.WriteAllText(Path.Combine(_webRoot, "about.html"), aboutHtml);
                 File.WriteAllText(Path.Combine(_webRoot, "styles.css"), stylesCss);
