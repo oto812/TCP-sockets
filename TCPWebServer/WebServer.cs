@@ -98,32 +98,17 @@ namespace TCPWebServer
             }
         }
 
-        
-        
-
-        
-        private async Task HandleClientAsync(TcpClient client)
-        {
-            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Client connected: {client.Client.RemoteEndPoint}");
-            // Placeholder: We will implement request reading and response sending here
-            await Task.Delay(100); // Simulate some work
-
-            // Clean up resources
-            client?.Close();
-            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Client disconnected: {client.Client.RemoteEndPoint}");
-        }
-
 
         public void Stop()
         {
-            if (!_isRunning) return; 
+            if (!_isRunning) return;
 
             _isRunning = false;
             Console.WriteLine("Web Server stopping...");
             try
             {
                 _listener?.Stop();
-            } 
+            }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error during listener stop: {ex.Message}");
@@ -132,11 +117,84 @@ namespace TCPWebServer
         }
 
 
+
+
+
+
+        private async Task HandleClientAsync(TcpClient client)
+        {
+            NetworkStream stream = null;
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Client connected: {client.Client.RemoteEndPoint}");
+
+            try
+            {
+                stream = client.GetStream();
+
+                
+                var request = await ReadHttpRequestAsync(stream);
+
+                if (string.IsNullOrEmpty(request))
+                {
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Empty request from {client.Client.RemoteEndPoint}. Closing connection.");
+                    return;
+                }
+
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Request received from {client.Client.RemoteEndPoint}:");
+                Console.WriteLine(request.Split('\n')[0]); 
+
+                // TODO: Process the request and send a response
+            }
+            catch (IOException ex) 
+            {
+                Console.WriteLine($"IO Error handling client {client.Client.RemoteEndPoint}: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error handling client {client.Client.RemoteEndPoint}: {ex.Message}");
+            }
+            finally
+            {
+                
+                stream?.Close();
+                client?.Close();
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Client disconnected: {client.Client.RemoteEndPoint}");
+            }
+        }
+
+        
+        private async Task<string> ReadHttpRequestAsync(NetworkStream stream)
+        {
+            
+            try
+            {
+                var buffer = new byte[4096]; 
+                var bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+
+                if (bytesRead == 0) 
+                    return string.Empty;
+
+                return Encoding.UTF8.GetString(buffer, 0, bytesRead);
+            }
+            catch (IOException ex) 
+            {
+                Console.WriteLine($"IOException during ReadHttpRequestAsync: {ex.Message}");
+                return string.Empty;
+            }
+            catch (Exception ex) 
+            {
+                Console.WriteLine($"Error during ReadHttpRequestAsync: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+
+
+
         private void CreateSampleFiles()
         {
             try
             {
-                // Create index.html
+                
                 var indexHtml = @"<html>
   <head>
     <title>My Web Server</title>
@@ -150,7 +208,7 @@ namespace TCPWebServer
   </body>
 </html>";
 
-                // Create about.html
+                
                 var aboutHtml = @"<html>
   <head>
     <title>About - My Web Server</title>
@@ -163,7 +221,7 @@ namespace TCPWebServer
   </body>
 </html>";
 
-                // Create styles.css
+                
                 var stylesCss = @"body {
     font-family: Arial, sans-serif;
     margin: 40px;
