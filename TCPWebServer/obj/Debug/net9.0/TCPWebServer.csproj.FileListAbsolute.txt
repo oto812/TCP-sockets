@@ -2,3 +2,14 @@ D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\TCPWebServer.GeneratedMSBuildEditor
 D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\TCPWebServer.AssemblyInfoInputs.cache
 D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\TCPWebServer.AssemblyInfo.cs
 D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\TCPWebServer.csproj.CoreCompileInputs.cache
+D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\TCPWebServer.sourcelink.json
+D:\TCP-sockets\TCPWebServer\bin\Debug\net9.0\TCPWebServer.exe
+D:\TCP-sockets\TCPWebServer\bin\Debug\net9.0\TCPWebServer.deps.json
+D:\TCP-sockets\TCPWebServer\bin\Debug\net9.0\TCPWebServer.runtimeconfig.json
+D:\TCP-sockets\TCPWebServer\bin\Debug\net9.0\TCPWebServer.dll
+D:\TCP-sockets\TCPWebServer\bin\Debug\net9.0\TCPWebServer.pdb
+D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\TCPWebServer.dll
+D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\refint\TCPWebServer.dll
+D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\TCPWebServer.pdb
+D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\TCPWebServer.genruntimeconfig.cache
+D:\TCP-sockets\TCPWebServer\obj\Debug\net9.0\ref\TCPWebServer.dll

@@ -38,23 +38,99 @@ namespace TCPWebServer
             }
         }
 
-        
+
         public async Task StartAsync()
         {
-            // To be implemented
-            await Task.CompletedTask; 
-            Console.WriteLine($"Web Server configured for port {_port}");
-            Console.WriteLine($"Serving files from: {_webRoot}");
+            try
+            {
+                _listener = new TcpListener(IPAddress.Any, _port);
+                _listener.Start();
+                _isRunning = true;
+
+                Console.WriteLine($"Web Server started on port {_port}");
+                Console.WriteLine($"Serving files from: {_webRoot}");
+                Console.WriteLine($"Access the server at: http://localhost:{_port}");
+                Console.WriteLine("Press Ctrl+C to stop the server...\n");
+
+                
+                while (_isRunning)
+                {
+                    try
+                    {
+                        
+                        if (!_isRunning) break;
+
+                        var tcpClient = await _listener.AcceptTcpClientAsync();
+
+                        
+                        Task.Run(() => HandleClientAsync(tcpClient));
+#pragma warning restore CS4014
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                       
+                        break;
+                    }
+                    catch (InvalidOperationException ex) when (ex.Message.Contains("AcceptTcpClientAsync"))
+                    {
+                        
+                        if (!_isRunning) break;
+                        Console.WriteLine($"Accept error: {ex.Message}"); 
+                    }
+                }
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine($"Socket error on start: {ex.Message}. Is port {_port} already in use?");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Server error: {ex.Message}");
+            }
+            finally
+            {
+                
+                if (_isRunning) 
+                {
+                    Stop(); 
+                }
+                Console.WriteLine("Server has shut down listener.");
+            }
         }
 
         
+        
+
+        
+        private async Task HandleClientAsync(TcpClient client)
+        {
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Client connected: {client.Client.RemoteEndPoint}");
+            // Placeholder: We will implement request reading and response sending here
+            await Task.Delay(100); // Simulate some work
+
+            // Clean up resources
+            client?.Close();
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Client disconnected: {client.Client.RemoteEndPoint}");
+        }
+
+
         public void Stop()
         {
-            // To be implemented
+            if (!_isRunning) return; 
+
             _isRunning = false;
-            _listener?.Stop();
             Console.WriteLine("Web Server stopping...");
+            try
+            {
+                _listener?.Stop();
+            } 
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during listener stop: {ex.Message}");
+            }
+            Console.WriteLine("Web Server stopped.");
         }
+
 
         private void CreateSampleFiles()
         {
